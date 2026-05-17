@@ -1,17 +1,14 @@
-// const { beforeEach, it, describe, before, after, cy } = require("node:test")
-
 describe('Manipulating the todolist associated to a task', () => {
     let uid
     let email
     let taskid
     let todotext
     let todoid
-    let todos
+
     before(function () {
         // create user
         cy.fixture('user.json')
             .then((user) => {
-                cy.log(user)
                 cy.request({
                     method: 'POST',
                     url: 'http://localhost:5000/users/create',
@@ -38,10 +35,6 @@ describe('Manipulating the todolist associated to a task', () => {
                         }).then((response) => {
                             taskid = Object.values(response.body[0]._id)[0]
                             todoid = response.body[0].todos[0]._id.$oid
-                            todos = response.body[0].todos
-                            cy.log(taskid)
-                            cy.log(todoid)
-                            cy.log(JSON.stringify(todos))
                         })
                     })
             })
@@ -130,24 +123,20 @@ describe('Manipulating the todolist associated to a task', () => {
                 url: `http://localhost:5000/tasks/byid/${taskid}`,
             })
             cy.fixture('task.json')
-                    .then((task) => {
-                        task.userid = uid
-                        todotext = task.todos
-                        cy.request({
-                            method: 'POST',
-                            url: 'http://localhost:5000/tasks/create',
-                            form: true,
-                            body: task,
-                            headers: { 'Cache-Control': 'no-cache' }
-                        }).then((response) => {
-                            taskid = Object.values(response.body[0]._id)[0]
-                            todoid = response.body[0].todos[0]._id.$oid
-                            todos = response.body[0].todos
-                            cy.log(taskid)
-                            cy.log(todoid)
-                            cy.log(JSON.stringify(todos))
-                        })
+                .then((task) => {
+                    task.userid = uid
+                    todotext = task.todos
+                    cy.request({
+                        method: 'POST',
+                        url: 'http://localhost:5000/tasks/create',
+                        form: true,
+                        body: task,
+                        headers: { 'Cache-Control': 'no-cache' }
+                    }).then((response) => {
+                        taskid = Object.values(response.body[0]._id)[0]
+                        todoid = response.body[0].todos[0]._id.$oid
                     })
+                })
         })
     })
 
