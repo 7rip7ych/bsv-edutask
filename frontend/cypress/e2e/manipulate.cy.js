@@ -46,6 +46,7 @@ describe('Manipulating the todolist associated to a task', () => {
                     })
             })
     })
+
     beforeEach(function () {
         cy.visit('http://localhost:3000')
         cy.contains('div', 'Email Address')
@@ -62,7 +63,7 @@ describe('Manipulating the todolist associated to a task', () => {
             cy.get('.inline-form')
                 .find('input[type=text]')
                 .clear()
-            
+
             cy.get('input[value="Add"]')
                 .should('be.disabled')
         })
@@ -89,8 +90,15 @@ describe('Manipulating the todolist associated to a task', () => {
                 .find('input[type=text]')
                 .clear()
 
+            cy.intercept('POST', 'http://localhost:5000/todos/create').as('addTodo')
+
             cy.get('input[value="Add"]')
                 .click()
+
+            cy.wait(2000)
+            cy.get('@addTodo.all').then((intercepted) => {
+                expect(intercepted).to.have.length(0)
+            })
 
             cy.get('ul.todo-list')
                 .find('.todo-item')
@@ -103,8 +111,12 @@ describe('Manipulating the todolist associated to a task', () => {
                 .find('input[type=text]')
                 .type('test description')
 
+            cy.intercept('POST', 'http://localhost:5000/todos/create').as('addTodo')
+
             cy.get('input[value="Add"]')
                 .click()
+
+            cy.wait('@addTodo')
 
             cy.get('ul.todo-list')
                 .find('.todo-item')
@@ -112,7 +124,6 @@ describe('Manipulating the todolist associated to a task', () => {
                 .should('contain.text', 'test description')
         })
 
-        
         afterEach(function() {
             cy.request({
                 method: 'DELETE',
