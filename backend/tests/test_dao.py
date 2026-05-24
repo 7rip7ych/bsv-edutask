@@ -1,64 +1,81 @@
 import pytest
+from unittest.mock import patch
 from pymongo.errors import WriteError
 
 from src.util.dao import DAO
 
 
+TEST_COLLECTION = "dao_create_test_collection"
+
+
+TEST_VALIDATOR = {
+    "$jsonSchema": {
+        "bsonType": "object",
+        "required": ["title", "done"],
+        "properties": {
+            "title": {
+                "bsonType": "string",
+                "description": "title must be a string"
+            },
+            "done": {
+                "bsonType": "bool",
+                "description": "done must be a boolean"
+            }
+        }
+    }
+}
+
+
 @pytest.fixture
-def user_dao():
-    dao = DAO("user")
-    dao.drop()
+def dao():
+    with patch("src.util.dao.getValidator", return_value=TEST_VALIDATOR):
+        dao = DAO(TEST_COLLECTION)
+        dao.drop()
 
-    dao = DAO("user")
-    yield dao
+        dao = DAO(TEST_COLLECTION)
+        yield dao
 
-    dao.drop()
+        dao.drop()
 
 
-def test_create_valid_user(user_dao):
+def test_create_valid_object(dao):
     data = {
-        "firstName": "Jane",
-        "lastName": "Doe",
-        "email": "jane.doe@example.com"
+        "title": "Watch video",
+        "done": False
     }
 
-    result = user_dao.create(data)
+    result = dao.create(data)
 
     assert result is not None
-    assert result["firstName"] == "Jane"
-    assert result["lastName"] == "Doe"
-    assert result["email"] == "jane.doe@example.com"
+    assert result["title"] == "Watch video"
+    assert result["done"] is False
     assert "_id" in result
 
 
-def test_create_user_missing_required_field(user_dao):
+def test_create_missing_required_property(dao):
     data = {
-        "firstName": "Jane",
-        "email": "jane.doe@example.com"
+        "title": "Watch video"
     }
 
     with pytest.raises(WriteError):
-        user_dao.create(data)
+        dao.create(data)
 
 
-def test_create_user_wrong_data_type(user_dao):
+def test_create_wrong_type_for_string_property(dao):
     data = {
-        "firstName": "Jane",
-        "lastName": "Doe",
-        "email": 123
+        "title": 123,
+        "done": False
     }
 
     with pytest.raises(WriteError):
-        user_dao.create(data)
+        dao.create(data)
 
 
-def test_create_user_with_tasks_wrong_data_type(user_dao):
+def test_create_wrong_type_for_boolean_property(dao):
     data = {
-        "firstName": "Jane",
-        "lastName": "Doe",
-        "email": "jane.doe@example.com",
-        "tasks": "not-an-array"
+        "title": "Watch video",
+        "done": "False"
     }
 
     with pytest.raises(WriteError):
-        user_dao.create(data)
+        dao.create(data)
